@@ -1,3 +1,4 @@
+require('dotenv').config(); // Завантажує змінні з .env файлу (для локальної розробки)
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -8,29 +9,35 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Підключення до бази PostgreSQL на Railway (через змінну DATABASE_URL)
+// Отримуємо DATABASE_URL зі змінних оточення Railway
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+    console.warn('⚠️ УВАГА: Змінна DATABASE_URL не знайдена у Variables. Використовуються резервні дефолтні тарифи.');
+}
+
+// Налаштування пулу підключень PostgreSQL
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wifi_db',
+    connectionString: databaseUrl,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Базові (дефолтні) тарифи, якщо в базі немає кастомних цін для роутера
+// Базові тарифи (використовуються, якщо для роутера немає запису в базі)
 const DEFAULT_TARIFFS = [
-    // Базові
     { id: 'basic_1h', type: 'basic', name: 'Базовий 1 год', duration: 3600, price: 10, timeLabel: '1 година', desc: 'Достатньо для соцмереж та веб-серфінгу.', isMore: false },
     { id: 'basic_12h', type: 'basic', name: 'Базовий 12 год', duration: 43200, price: 50, timeLabel: '12 годин', desc: 'Економний вибір на весь день.', isMore: false },
     { id: 'basic_1d', type: 'basic', name: 'Базовий 1 день', duration: 86400, price: 80, timeLabel: '1 день', desc: '', isMore: true },
     { id: 'basic_7d', type: 'basic', name: 'Базовий 7 днів', duration: 604800, price: 250, timeLabel: '7 днів', desc: '', isMore: true },
     
-    // Ультра
     { id: 'ultra_1h', type: 'ultra', name: 'Ультра 1 год', duration: 3600, price: 15, timeLabel: '1 година', desc: 'Максимальна швидкість + високий пріоритет.', isMore: false },
     { id: 'ultra_12h', type: 'ultra', name: 'Ультра 12 год', duration: 43200, price: 75, timeLabel: '12 годин', desc: 'Гігабітний канал, 4K відео без затримок.', isMore: false },
     { id: 'ultra_1d', type: 'ultra', name: 'Ультра 1 день', duration: 86400, price: 120, timeLabel: '1 день', desc: '', isMore: true },
     { id: 'ultra_7d', type: 'ultra', name: 'Ультра 7 днів', duration: 604800, price: 350, timeLabel: '7 днів', desc: '', isMore: true }
 ];
 
-// Автоматичне створення таблиць в базі при запуску
+// Авто-створення таблиць при запуску, якщо база доступна
 async function initDB() {
+    if (!databaseUrl) return;
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS routers (
@@ -48,22 +55,22 @@ async function initDB() {
                 UNIQUE(router_id, tariff_id)
             );
         `);
-        console.log('✅ База даних успішно ініціалізована');
+        console.log('✅ Успішне підключення до PostgreSQL через DATABASE_URL');
     } catch (err) {
-        console.error('Помилка ініціалізації БД (використовуються дефолтні ціни):', err.message);
+        console.error('Помилка підключення до БД:', err.message);
     }
 }
 initDB();
 
-/**
- * 📡 Отримання тарифів під конкретний роутер
- * Приклад запиту: GET /api/tariffs?router_id=router_cafe_1
- */
+// Отримання тарифів для роутера
 app.get('/api/tariffs', async (req, res) => {
     const routerId = req.query.router_id || 'default';
     
+    if (!databaseUrl) {
+        return res.json({ routerId: 'default', tariffs: DEFAULT_TARIFFS });
+    }
+
     try {
-        // Отримуємо кастомні ціни для цього роутера, якщо вони є
         const result = await pool.query(
             'SELECT tariff_id, custom_price FROM router_tariffs WHERE router_id = $1',
             [routerId]
@@ -74,7 +81,6 @@ app.get('/api/tariffs', async (req, res) => {
             customPriceMap[row.tariff_id] = parseFloat(row.custom_price);
         });
 
-        // Формуємо фінальний список: якщо є кастомна ціна — беремо її, інакше дефолтну
         const tariffs = DEFAULT_TARIFFS.map(t => ({
             ...t,
             price: customPriceMap[t.id] !== undefined ? customPriceMap[t.id] : t.price
@@ -82,30 +88,23 @@ app.get('/api/tariffs', async (req, res) => {
 
         res.json({ routerId, tariffs });
     } catch (err) {
-        console.warn('Використовуються стандартні ціни (БД офлайн або відсутня):', err.message);
         res.json({ routerId: 'default', tariffs: DEFAULT_TARIFFS });
     }
 });
 
-/**
- * 🛠 Зміна/Встановлення ціни на тарифи для роутера
- * POST /api/admin/set-price
- * Тіло: { "router_id": "router_cafe_1", "tariff_id": "basic_1h", "price": 20 }
- */
+// Адмін-роут для зміни ціни під конкретний роутер
 app.post('/api/admin/set-price', async (req, res) => {
     const { router_id, tariff_id, price } = req.body;
     if (!router_id || !tariff_id || price === undefined) {
-        return res.status(400).json({ error: 'Неповні дані (router_id, tariff_id, price обовʼязкові)' });
+        return res.status(400).json({ error: 'Поля router_id, tariff_id, price є обовʼязковими' });
     }
 
     try {
-        // Створюємо роутер, якщо ще не існує
         await pool.query(
             'INSERT INTO routers (router_id, name) VALUES ($1, $2) ON CONFLICT (router_id) DO NOTHING',
             [router_id, `Роутер ${router_id}`]
         );
 
-        // Оновлюємо або створюємо ціну
         await pool.query(`
             INSERT INTO router_tariffs (router_id, tariff_id, custom_price)
             VALUES ($1, $2, $3)
