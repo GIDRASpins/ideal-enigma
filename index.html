@@ -3,39 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wi-Fi Connect</title>
+    <title>Wi-Fi Connect & Payment</title>
+    <!-- Підключення шрифтів та стилів -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Фоновий декор -->
+
+    <!-- Анімований фон -->
     <div class="bg-blobs">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
     </div>
 
-    <div class="container">
-        <!-- Вітальне вікно -->
-        <div id="welcome-screen" class="glass-card">
+    <!-- 1. ВІТАЛЬНИЙ ЕКРАН -->
+    <div id="welcome-screen" class="screen">
+        <div class="glass-card">
             <div class="icon-box pulse">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                    <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
             </div>
             <h1 class="title">Привіт!</h1>
-            <p class="subtitle">Ти поруч із мережею. Натисни кнопку, щоб отримати швидкий інтернет.</p>
-            <button class="main-btn" onclick="showLogin()">Приєднатися</button>
+            <p class="subtitle">Ти поруч із мережею. Приєднуйся до швидкісного інтернету прямо зараз.</p>
+            <button class="main-btn" onclick="showScreen('welcome-screen', 'login-screen')">Приєднатися</button>
+        </div>
+    </div>
+
+    <!-- 2. ЕКРАН ВХОДУ (ЛОГІН) -->
+    <div id="login-screen" class="screen hidden">
+        <div class="glass-card">
+            <h2 class="title">Вхід</h2>
+            <p class="subtitle">Введіть ваші дані для доступу</p>
+            <form id="loginForm">
+                <input type="text" placeholder="Ваше ім'я" required>
+                <input type="password" placeholder="Код доступу" required>
+                <button type="submit" class="main-btn">Увійти в мережу</button>
+                <button type="button" class="back-btn" onclick="showScreen('login-screen', 'welcome-screen')">Назад</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. ЕКРАН ТАРИФІВ (БАЗОВИЙ ТА УЛЬТРА) -->
+    <div id="tariff-screen" class="screen hidden">
+        
+        <!-- Картка: Базовий -->
+        <div class="glass-card">
+            <div class="top-badges">
+                <div class="badge">Баланс: <span id="basic-balance" class="balance-amount">0.00 ₴</span></div>
+                <div id="timer-badge-basic" class="badge timer-badge hidden-timer">⏱ <span id="time-left-basic">00:00:00</span></div>
+            </div>
+            
+            <h1 class="title">Базовий</h1>
+            <p class="subtitle">Швидкість до 20 Мбіт/с</p>
+            
+            <div class="tariffs-list">
+                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 1 год', 10, 3600)">
+                    <span class="time">1 година</span> <span class="price">10 ₴</span>
+                    <span class="tooltip">Достатньо для соцмереж та веб-серфінгу.</span>
+                </button>
+                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 12 год', 50, 43200)">
+                    <span class="time">12 годин</span> <span class="price">50 ₴</span>
+                    <span class="tooltip">Економний вибір на весь день.</span>
+                </button>
+            </div>
+            
+            <div class="divider toggle-divider" onclick="toggleMore('basic')">
+                <span id="toggleMoreText-basic">Показати ще ▼</span>
+            </div>
+            
+            <div id="more-tariffs-basic" class="hidden-tariffs">
+                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 1 день', 80, 86400)">
+                    <span class="time">1 день</span> <span class="price">80 ₴</span>
+                </button>
+                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 7 днів', 250, 604800)">
+                    <span class="time">7 днів</span> <span class="price">250 ₴</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Форма логіну (прихована спочатку) -->
-        <div id="login-screen" class="glass-card hidden slide-up">
-            <h2 class="form-title">Авторизація</h2>
-            <form id="loginForm">
-                <div class="input-field">
-                    <input type="text" placeholder="Ваше ім'я" required>
+        <!-- Картка: Ультра -->
+        <div class="glass-card ultra-card">
+            <div class="top-badges">
+                <div class="badge">Баланс: <span id="ultra-balance" class="balance-amount">0.00 ₴</span></div>
+                <div id="timer-badge-ultra" class="badge timer-badge hidden-timer">⏱ <span id="time-left-ultra">00:00:00</span></div>
+            </div>
+            
+            <h1 class="title ultra-text">Ультра</h1>
+            <p class="subtitle">Максимальна швидкість до 1 Гбіт/с</p>
+            
+            <div class="tariffs-list">
+                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 1 год', 15, 3600)">
+                    <span class="time">1 година</span> <span class="price">15 ₴</span>
+                    <span class="tooltip">Максимальна швидкість + високий пріоритет.</span>
+                </button>
+                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 12 год', 75, 43200)">
+                    <span class="time">12 годин</span> <span class="price">75 ₴</span>
+                    <span class="tooltip">Гігабітний канал, 4K відео без затримок.</span>
+                </button>
+            </div>
+            
+            <div class="divider toggle-divider" onclick="toggleMore('ultra')">
+                <span id="toggleMoreText-ultra">Показати ще ▼</span>
+            </div>
+            
+            <div id="more-tariffs-ultra" class="hidden-tariffs">
+                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 1 день', 120, 86400)">
+                    <span class="time">1 день</span> <span class="price">120 ₴</span>
+                </button>
+                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 7 днів', 350, 604800)">
+                    <span class="time">7 днів</span> <span class="price">350 ₴</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 4. ЕКРАН МЕТОДУ ОПЛАТИ (КАРТИНКА + ТЕКСТ) -->
+    <div id="method-screen" class="screen hidden">
+        <div class="glass-card">
+            <div class="icon-box pulse">
+                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+                </svg>
+            </div>
+            <h1 class="title">Оплата</h1>
+            <p id="payment-info" class="subtitle">Оберіть зручний спосіб оплати</p>
+            
+            <!-- Apple Pay: Картинка яблука + Текст Pay -->
+            <button class="pay-btn apay-btn" onclick="fakePay('Apple Pay')" aria-label="Apple Pay">
+                <div class="pay-btn-content">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Apple_logo_white.svg" alt="Apple" class="brand-img apple-img">
+                    <span class="pay-text apay-text">Pay</span>
                 </div>
-                <div class="input-field">
-                    <input type="password" placeholder="Код доступу" required>
+            </button>
+            
+            <!-- Google Pay: Картинка Google 'G' + Текст Pay -->
+            <button class="pay-btn gpay-btn" onclick="fakePay('Google Pay')" aria-label="Google Pay">
+                <div class="pay-btn-content">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="brand-img google-img">
+                    <span class="pay-text gpay-text">Pay</span>
                 </div>
-                <button type="submit" class="main-btn">Увійти в мережу</button>
+            </button>
+            
+            <div class="divider"><span>або</span></div>
+            
+            <button class="main-btn card-select-btn" onclick="showScreen('method-screen', 'card-screen')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+                </svg>
+                <span>Оплатити карткою</span>
+            </button>
+            <button class="back-btn" onclick="showScreen('method-screen', 'tariff-screen')">До тарифів</button>
+        </div>
+    </div>
+
+    <!-- 5. ЕКРАН ВВЕДЕННЯ ДАНИХ КАРТКИ -->
+    <div id="card-screen" class="screen hidden">
+        <div class="glass-card">
+            <h2 class="title" style="font-size: 24px;">Дані картки</h2>
+            <form id="paymentForm">
+                <input type="text" placeholder="Номер карти (16 цифр)" maxlength="16" required>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" placeholder="ММ/РР" maxlength="5" required>
+                    <input type="password" placeholder="CVV" maxlength="3" required>
+                </div>
+                <input type="text" placeholder="Ім'я власника картки" required>
+                <button type="submit" id="finalPayBtn" class="main-btn">Оплатити</button>
+                <button type="button" class="back-btn" onclick="showScreen('card-screen', 'method-screen')">Скасувати</button>
             </form>
         </div>
     </div>

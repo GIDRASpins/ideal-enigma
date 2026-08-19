@@ -2,7 +2,11 @@
     --primary: #6366f1;
     --secondary: #a855f7;
     --text: #ffffff;
-    --glass: rgba(255, 255, 255, 0.1);
+    --glass: rgba(255, 255, 255, 0.08);
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -16,6 +20,7 @@ body {
     align-items: center;
     overflow: hidden;
     color: var(--text);
+    position: relative;
 }
 
 /* Анімований фон */
@@ -46,44 +51,320 @@ body {
     to { transform: translate(100px, 100px); }
 }
 
+/* Контейнери екранів */
+.screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    width: 100%;
+    padding: 20px;
+}
+
+.screen.hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translate(-50%, -45%) scale(0.9) !important;
+}
+
 /* Скляна картка */
 .glass-card {
     background: var(--glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 32px;
-    padding: 40px;
-    width: 320px;
+    padding: 32px 24px;
+    width: 330px;
     text-align: center;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
-.title { font-size: 32px; font-weight: 800; margin-bottom: 10px; }
-.subtitle { font-size: 15px; opacity: 0.8; margin-bottom: 30px; line-height: 1.5; }
+.glass-card::-webkit-scrollbar {
+    display: none;
+}
 
-/* Кнопка */
-.main-btn {
+.ultra-card {
+    background: rgba(168, 85, 247, 0.06);
+    border-color: rgba(168, 85, 247, 0.35);
+}
+
+/* Заголовки */
+.title { font-size: 28px; font-weight: 800; margin: 0 0 8px 0; }
+.ultra-text { color: #a855f7; text-shadow: 0 0 12px rgba(168, 85, 247, 0.4); }
+.subtitle { font-size: 14px; opacity: 0.8; margin-bottom: 22px; line-height: 1.4; }
+
+/* Віджети Балансу / Таймера */
+.top-badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 7px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+}
+
+.balance-amount, #time-left-basic, #time-left-ultra {
+    color: #a855f7;
+    font-weight: 800;
+    margin-left: 5px;
+}
+
+.timer-badge { border-color: #a855f7; background: rgba(168, 85, 247, 0.12); }
+.timer-badge.hidden-timer { display: none; }
+
+/* Кнопки тарифів */
+.tariffs-list, .hidden-tariffs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tariff-btn {
     width: 100%;
-    padding: 16px;
-    border: none;
+    padding: 14px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.tariff-btn .time { font-size: 14px; opacity: 0.85; font-weight: 600; }
+.tariff-btn .price { font-size: 16px; font-weight: 800; }
+
+.tariff-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    border-color: var(--primary);
+}
+
+.ultra-btn {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.4);
+}
+.ultra-btn:hover {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: #a855f7;
+}
+
+/* Тултипи */
+.has-tooltip { position: relative; }
+.tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    width: max-content;
+    max-width: 200px;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease-in-out;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    line-height: 1.4;
+}
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.2) transparent transparent transparent;
+}
+.has-tooltip:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Розкриття додаткових тарифів */
+.toggle-divider {
+    cursor: pointer;
+    margin: 15px 0 10px 0;
+    transition: color 0.2s;
+}
+.toggle-divider:hover { color: white; }
+.toggle-divider:hover::before, .toggle-divider:hover::after {
+    border-bottom-color: rgba(255, 255, 255, 0.4);
+}
+
+.hidden-tariffs { display: none; }
+.hidden-tariffs.show {
+    display: flex;
+    animation: slideDown 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================================
+   ОФІЦІЙНІ КНОПКИ APPLE PAY ТА GOOGLE PAY (IMG + TEXT)
+   ======================================================== */
+.pay-btn {
+    width: 100%;
+    height: 50px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+    padding: 0 16px;
+}
+
+.pay-btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.brand-img {
+    display: block;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.apple-img {
+    height: 20px;
+    width: auto;
+    margin-bottom: 2px; /* Оптичне вирівнювання за базовою лінією */
+}
+
+.google-img {
+    height: 20px;
+    width: 20px;
+}
+
+.pay-text {
+    font-size: 21px;
+    line-height: 1;
+    display: inline-block;
+}
+
+/* Apple Pay Button */
+.apay-btn {
+    background: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.apay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+.apay-text {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-weight: 500;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+/* Google Pay Button */
+.gpay-btn {
     background: #ffffff;
-    color: #0f172a;
-    font-size: 16px;
+    border: 1px solid #ffffff;
+}
+.gpay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    background: #f8f9fa;
+}
+.gpay-text {
+    font-family: 'Plus Jakarta Sans', -apple-system, Roboto, sans-serif;
+    font-weight: 700;
+    color: #3c4043;
+    letter-spacing: -0.3px;
+}
+
+.pay-btn:active {
+    transform: scale(0.98);
+}
+
+/* Кнопка звичайної банківської картки */
+.card-select-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+    gap: 10px;
+    height: 50px;
+}
+.card-select-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* Загальні кнопки */
+.main-btn, .back-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s, background 0.2s;
+    transition: all 0.2s ease;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.main-btn:hover {
-    transform: translateY(-2px);
-    background: #f1f1f1;
+.main-btn { background: #ffffff; color: #0f172a; }
+.main-btn:hover:not(:disabled) { transform: translateY(-2px); background: #f1f1f1; }
+.main-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.back-btn {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-top: 4px;
 }
+.back-btn:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
 
 /* Поля вводу */
-.input-field { margin-bottom: 15px; }
 input {
     width: 100%;
     padding: 14px;
@@ -91,41 +372,53 @@ input {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     color: white;
-    box-sizing: border-box;
+    margin-bottom: 12px;
     outline: none;
+    font-family: inherit;
+    font-size: 14px;
 }
+input:focus { border-color: var(--primary); }
 
-input::placeholder { color: rgba(255, 255, 255, 0.4); }
-
-/* Анімації */
-.hidden { display: none; opacity: 0; }
-
-.slide-up {
-    animation: slideUp 0.6s forwards;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.pulse {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); filter: drop-shadow(0 0 0px var(--primary)); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 20px var(--primary)); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 0px var(--primary)); }
-}
-
+/* Декорації та іконки */
 .icon-box {
     background: var(--primary);
-    width: 80px;
-    height: 80px;
-    border-radius: 24px;
+    width: 65px;
+    height: 65px;
+    border-radius: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 0 auto 20px;
+    margin: 0 auto 18px;
+}
+
+.pulse { animation: pulse 2s infinite; }
+@keyframes pulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px var(--primary)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 15px var(--primary)); }
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+    color: rgba(255,255,255,0.4);
+    font-size: 13px;
+}
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+.divider span { padding: 0 10px; }
+
+/* Мобільна адаптація */
+@media (max-width: 720px) {
+    .screen {
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        overflow-y: auto;
+        justify-content: flex-start;
+        padding: 40px 0;
+    }
 }
