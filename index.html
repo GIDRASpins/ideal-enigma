@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wi-Fi Connect & Payment</title>
-    <!-- Підключення шрифтів та стилів -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -39,90 +38,83 @@
             <h2 class="title">Вхід</h2>
             <p class="subtitle">Введіть ваші дані для доступу</p>
             <form id="loginForm">
-                <input type="text" placeholder="Ваше ім'я" required>
-                <input type="password" placeholder="Код доступу" required>
-                <button type="submit" class="main-btn">Увійти в мережу</button>
+                <input type="text" id="loginUsername" placeholder="Ваше ім'я" required>
+                <input type="password" id="loginPassword" placeholder="Код доступу" required>
+                <button type="submit" id="loginSubmitBtn" class="main-btn">Увійти в мережу</button>
                 <button type="button" class="back-btn" onclick="showScreen('login-screen', 'welcome-screen')">Назад</button>
             </form>
         </div>
     </div>
 
-    <!-- 3. ЕКРАН ТАРИФІВ (БАЗОВИЙ ТА УЛЬТРА) -->
+    <!-- 3. ЕКРАН ТАРИФІВ (З ПАНЕЛЛЮ КОРИСТУВАЧА ТА ВИХОДУ) -->
     <div id="tariff-screen" class="screen hidden">
         
-        <!-- Картка: Базовий -->
-        <div class="glass-card">
-            <div class="top-badges">
-                <div class="badge">Баланс: <span id="basic-balance" class="balance-amount">0.00 ₴</span></div>
-                <div id="timer-badge-basic" class="badge timer-badge hidden-timer">⏱ <span id="time-left-basic">00:00:00</span></div>
+        <!-- Верхня панель користувача з кнопкою виходу -->
+        <div class="user-top-bar">
+            <div class="user-info-badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span id="current-username-display">Користувач</span>
             </div>
-            
-            <h1 class="title">Базовий</h1>
-            <p class="subtitle">Швидкість до 20 Мбіт/с</p>
-            
-            <div class="tariffs-list">
-                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 1 год', 10, 3600)">
-                    <span class="time">1 година</span> <span class="price">10 ₴</span>
-                    <span class="tooltip">Достатньо для соцмереж та веб-серфінгу.</span>
-                </button>
-                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 12 год', 50, 43200)">
-                    <span class="time">12 годин</span> <span class="price">50 ₴</span>
-                    <span class="tooltip">Економний вибір на весь день.</span>
-                </button>
-            </div>
-            
-            <div class="divider toggle-divider" onclick="toggleMore('basic')">
-                <span id="toggleMoreText-basic">Показати ще ▼</span>
-            </div>
-            
-            <div id="more-tariffs-basic" class="hidden-tariffs">
-                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 1 день', 80, 86400)">
-                    <span class="time">1 день</span> <span class="price">80 ₴</span>
-                </button>
-                <button class="tariff-btn has-tooltip" onclick="selectTariff('basic', 'Базовий 7 днів', 250, 604800)">
-                    <span class="time">7 днів</span> <span class="price">250 ₴</span>
-                </button>
-            </div>
+            <button class="logout-btn" onclick="logoutUser()" title="Вийти з акаунта">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Вийти</span>
+            </button>
         </div>
 
-        <!-- Картка: Ультра -->
-        <div class="glass-card ultra-card">
-            <div class="top-badges">
-                <div class="badge">Баланс: <span id="ultra-balance" class="balance-amount">0.00 ₴</span></div>
-                <div id="timer-badge-ultra" class="badge timer-badge hidden-timer">⏱ <span id="time-left-ultra">00:00:00</span></div>
+        <div class="cards-container">
+            <!-- Картка: Базовий -->
+            <div class="glass-card">
+                <div class="top-badges">
+                    <div class="badge">Баланс: <span id="basic-balance" class="balance-amount">0.00 ₴</span></div>
+                    <div id="timer-badge-basic" class="badge timer-badge hidden-timer">⏱ <span id="time-left-basic">00:00:00</span></div>
+                </div>
+                
+                <h1 class="title">Базовий</h1>
+                <p class="subtitle">Швидкість до 20 Мбіт/с</p>
+                
+                <div class="tariffs-list" id="basic-tariffs-list">
+                    <div class="loading-text">Завантаження тарифів...</div>
+                </div>
+                
+                <div class="divider toggle-divider" onclick="toggleMore('basic')">
+                    <span id="toggleMoreText-basic">Показати ще ▼</span>
+                </div>
+                
+                <div id="more-tariffs-basic" class="hidden-tariffs"></div>
             </div>
-            
-            <h1 class="title ultra-text">Ультра</h1>
-            <p class="subtitle">Максимальна швидкість до 1 Гбіт/с</p>
-            
-            <div class="tariffs-list">
-                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 1 год', 15, 3600)">
-                    <span class="time">1 година</span> <span class="price">15 ₴</span>
-                    <span class="tooltip">Максимальна швидкість + високий пріоритет.</span>
-                </button>
-                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 12 год', 75, 43200)">
-                    <span class="time">12 годин</span> <span class="price">75 ₴</span>
-                    <span class="tooltip">Гігабітний канал, 4K відео без затримок.</span>
-                </button>
-            </div>
-            
-            <div class="divider toggle-divider" onclick="toggleMore('ultra')">
-                <span id="toggleMoreText-ultra">Показати ще ▼</span>
-            </div>
-            
-            <div id="more-tariffs-ultra" class="hidden-tariffs">
-                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 1 день', 120, 86400)">
-                    <span class="time">1 день</span> <span class="price">120 ₴</span>
-                </button>
-                <button class="tariff-btn ultra-btn has-tooltip" onclick="selectTariff('ultra', 'Ультра 7 днів', 350, 604800)">
-                    <span class="time">7 днів</span> <span class="price">350 ₴</span>
-                </button>
+
+            <!-- Картка: Ультра -->
+            <div class="glass-card ultra-card">
+                <div class="top-badges">
+                    <div class="badge">Баланс: <span id="ultra-balance" class="balance-amount">0.00 ₴</span></div>
+                    <div id="timer-badge-ultra" class="badge timer-badge hidden-timer">⏱ <span id="time-left-ultra">00:00:00</span></div>
+                </div>
+                
+                <h1 class="title ultra-text">Ультра</h1>
+                <p class="subtitle">Максимальна швидкість до 1 Гбіт/с</p>
+                
+                <div class="tariffs-list" id="ultra-tariffs-list">
+                    <div class="loading-text">Завантаження тарифів...</div>
+                </div>
+                
+                <div class="divider toggle-divider" onclick="toggleMore('ultra')">
+                    <span id="toggleMoreText-ultra">Показати ще ▼</span>
+                </div>
+                
+                <div id="more-tariffs-ultra" class="hidden-tariffs"></div>
             </div>
         </div>
 
     </div>
 
-    <!-- 4. ЕКРАН МЕТОДУ ОПЛАТИ (КАРТИНКА + ТЕКСТ) -->
+    <!-- 4. ЕКРАН МЕТОДУ ОПЛАТИ -->
     <div id="method-screen" class="screen hidden">
         <div class="glass-card">
             <div class="icon-box pulse">
@@ -133,7 +125,6 @@
             <h1 class="title">Оплата</h1>
             <p id="payment-info" class="subtitle">Оберіть зручний спосіб оплати</p>
             
-            <!-- Apple Pay: Картинка яблука + Текст Pay -->
             <button class="pay-btn apay-btn" onclick="fakePay('Apple Pay')" aria-label="Apple Pay">
                 <div class="pay-btn-content">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Apple_logo_white.svg" alt="Apple" class="brand-img apple-img">
@@ -141,7 +132,6 @@
                 </div>
             </button>
             
-            <!-- Google Pay: Картинка Google 'G' + Текст Pay -->
             <button class="pay-btn gpay-btn" onclick="fakePay('Google Pay')" aria-label="Google Pay">
                 <div class="pay-btn-content">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="brand-img google-img">
