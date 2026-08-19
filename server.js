@@ -1,28 +1,33 @@
-require('dotenv').config(); // Завантажує змінні з .env файлу (для локальної розробки)
+require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Отримуємо DATABASE_URL зі змінних оточення Railway
+// Визначаємо шлях до статичних файлів (якщо є папка public — беремо її, якщо ні — беремо корінь)
+const staticDir = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
+    ? path.join(__dirname, 'public')
+    : __dirname;
+
+app.use(express.static(staticDir));
+
+// Підключення до бази PostgreSQL
 const databaseUrl = process.env.DATABASE_URL;
-
 if (!databaseUrl) {
-    console.warn('⚠️ УВАГА: Змінна DATABASE_URL не знайдена у Variables. Використовуються резервні дефолтні тарифи.');
+    console.warn('⚠️ DATABASE_URL не знайдена у Variables. Використовуються базові тарифи.');
 }
 
-// Налаштування пулу підключень PostgreSQL
 const pool = new Pool({
     connectionString: databaseUrl,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Базові тарифи (використовуються, якщо для роутера немає запису в базі)
+// Базові тарифи
 const DEFAULT_TARIFFS = [
     { id: 'basic_1h', type: 'basic', name: 'Базовий 1 год', duration: 3600, price: 10, timeLabel: '1 година', desc: 'Достатньо для соцмереж та веб-серфінгу.', isMore: false },
     { id: 'basic_12h', type: 'basic', name: 'Базовий 12 год', duration: 43200, price: 50, timeLabel: '12 годин', desc: 'Економний вибір на весь день.', isMore: false },
@@ -35,7 +40,7 @@ const DEFAULT_TARIFFS = [
     { id: 'ultra_7d', type: 'ultra', name: 'Ультра 7 днів', duration: 604800, price: 350, timeLabel: '7 днів', desc: '', isMore: true }
 ];
 
-// Авто-створення таблиць при запуску, якщо база доступна
+// Ініціалізація БД
 async function initDB() {
     if (!databaseUrl) return;
     try {
@@ -55,14 +60,14 @@ async function initDB() {
                 UNIQUE(router_id, tariff_id)
             );
         `);
-        console.log('✅ Успішне підключення до PostgreSQL через DATABASE_URL');
+        console.log('✅ База даних PostgreSQL успішно підключена');
     } catch (err) {
         console.error('Помилка підключення до БД:', err.message);
     }
 }
 initDB();
 
-// Отримання тарифів для роутера
+// API отримання тарифів
 app.get('/api/tariffs', async (req, res) => {
     const routerId = req.query.router_id || 'default';
     
@@ -92,7 +97,7 @@ app.get('/api/tariffs', async (req, res) => {
     }
 });
 
-// Адмін-роут для зміни ціни під конкретний роутер
+// API адмінки для зміни ціни
 app.post('/api/admin/set-price', async (req, res) => {
     const { router_id, tariff_id, price } = req.body;
     if (!router_id || !tariff_id || price === undefined) {
@@ -118,7 +123,18 @@ app.post('/api/admin/set-price', async (req, res) => {
     }
 });
 
+// Головний маршрут — повертає index.html
+app.get('*', (req, res) => {
+    const indexPath = path.join(staticDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('Помилка: файл index.html не знайдено в проєкті.');
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Сервер працює на порту ${PORT}`);
+    console.log(`📂 Статичні файли віддаються з: ${staticDir}`);
 });
