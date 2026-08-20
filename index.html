@@ -168,6 +168,44 @@
         </div>
     </div>
 
+    <!-- 6. ЕКРАН УСПІШНОЇ ОПЛАТИ ТА АКТИВАЦІЇ WI-FI -->
+    <div id="success-screen" class="screen hidden">
+        <div class="glass-card">
+            <div class="icon-box pulse" style="background: #22c55e;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                </svg>
+            </div>
+
+            <h1 class="title" style="color: #4ade80;">Доступ відкрито!</h1>
+            <p class="subtitle" id="success-status-text">
+                Оплату успішно підтверджено. Ваш доступ до інтернету активовано.
+            </p>
+
+            <div class="user-info-badge" style="justify-content: center; margin-bottom: 20px; font-size: 14px;">
+                ⏱ Активовано: <b id="active-duration-display" style="color: #a855f7; margin-left: 6px;">-</b>
+            </div>
+
+            <!-- Форма для відправки авторизації на роутер (Captive Portal) -->
+            <form id="captiveLoginForm" method="POST" action="">
+                <input type="hidden" name="username" id="cp-username">
+                <input type="hidden" name="password" id="cp-password">
+                <input type="hidden" name="dst" id="cp-dst" value="https://google.com">
+                
+                <button type="button" id="connectInternetBtn" class="main-btn" style="background: #22c55e; color: #ffffff;" onclick="grantWifiAccessAndRedirect()">
+                    Вийти в інтернет 🚀
+                </button>
+            </form>
+
+            <button type="button" class="back-btn" onclick="showScreen('success-screen', 'tariff-screen')">
+                Особистий кабінет / Баланс
+            </button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
