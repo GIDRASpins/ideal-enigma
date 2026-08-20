@@ -14,7 +14,7 @@ let ultraTimeLeft = 0;
 let ultraTimer = null;
 
 /**
- * Ініціалізація: перевіряємо чи є збережений користувач у LocalStorage
+ * Ініціалізація: завантаження тарифів та перевірка сесії
  */
 window.addEventListener('DOMContentLoaded', () => {
     loadDynamicTariffs();
@@ -27,7 +27,7 @@ function checkSavedUserSession() {
         try {
             const user = JSON.parse(savedUserJson);
             applyUserSession(user);
-            // Пропускаємо екран логіну одразу на тарифи
+            // Пропускаємо екран входу одразу на тарифи
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('tariff-screen').classList.remove('hidden');
         } catch (e) {
@@ -138,7 +138,7 @@ async function syncUserData() {
             })
         });
     } catch (e) {
-        console.warn('Синхронізація з БД не вдалася (офлайн):', e);
+        console.warn('Синхронізація з БД не вдалася (офлайн режим):', e);
     }
 }
 
@@ -151,7 +151,7 @@ function getRouterIdFromURL() {
 }
 
 /**
- * Завантаження тарифів під конкретний роутер
+ * Завантаження тарифів
  */
 async function loadDynamicTariffs() {
     currentRouterId = getRouterIdFromURL();
@@ -250,12 +250,13 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
         btn.disabled = false;
         btn.innerText = `Оплатити ${selectedTariffData.price} ₴`;
         completePayment();
-    }, 2000);
+    }, 1500);
 });
 
-function completePayment() {
-    alert(`Оплата успішна! Тариф "${selectedTariffData.name}" активовано.`);
-
+/**
+ * Завершення оплати та перехід на екран доступу до Wi-Fi
+ */
+async function completePayment() {
     if (selectedTariffData.type === 'basic') {
         basicBalance += selectedTariffData.price;
         document.getElementById('basic-balance').innerText = `${basicBalance}.00 ₴`;
@@ -268,12 +269,45 @@ function completePayment() {
         startUltraTimer();
     }
 
-    // Синхронізуємо новий баланс та час в БД і LocalStorage
-    syncUserData();
+    // Синхронізуємо новий баланс та час в БД
+    await syncUserData();
 
+    // Заповнюємо дані на екрані успіху
+    document.getElementById('active-duration-display').innerText = selectedTariffData.name;
     document.getElementById('paymentForm').reset();
-    const activeScreen = !document.getElementById('card-screen').classList.contains('hidden') ? 'card-screen' : 'method-screen';
-    showScreen(activeScreen, 'tariff-screen');
+
+    // Визначаємо поточний активний екран для анімованого переходу
+    const activeScreen = !document.getElementById('card-screen').classList.contains('hidden') 
+        ? 'card-screen' 
+        : 'method-screen';
+    
+    showScreen(activeScreen, 'success-screen');
+}
+
+/**
+ * Надання доступу роутером (авторизація в Captive Portal або перехід в інтернет)
+ */
+function grantWifiAccessAndRedirect() {
+    const btn = document.getElementById('connectInternetBtn');
+    btn.innerText = 'Підключення...';
+    btn.disabled = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const loginLink = params.get('link-login') || params.get('login_url'); // Параметр URL від Captive Portal / MikroTik
+    const targetUrl = params.get('target') || params.get('dst') || 'https://www.google.com';
+
+    if (loginLink && currentUser) {
+        const form = document.getElementById('captiveLoginForm');
+        form.action = loginLink;
+        document.getElementById('cp-username').value = currentUser.username;
+        document.getElementById('cp-password').value = currentUser.username;
+        document.getElementById('cp-dst').value = targetUrl;
+        form.submit();
+    } else {
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 1000);
+    }
 }
 
 function formatTime(secondsTotal) {
