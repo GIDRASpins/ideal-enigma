@@ -14,9 +14,18 @@ let ultraTimeLeft = 0;
 let ultraTimer = null;
 
 /**
- * Ініціалізація: завантаження тарифів та перевірка сесії
+ * Ініціалізація:
+ * 1. Збереження параметрів авторизації Captive Portal (NoDogSplash / openNDS тощо)
+ * 2. Завантаження тарифів
+ * 3. Перевірка збереженої сесії
  */
 window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('login_url')) localStorage.setItem('saved_login_url', params.get('login_url'));
+    if (params.has('tok')) localStorage.setItem('saved_tok', params.get('tok'));
+    if (params.has('redir')) localStorage.setItem('saved_redir', params.get('redir'));
+    if (params.has('authaction')) localStorage.setItem('saved_authaction', params.get('authaction'));
+
     loadDynamicTariffs();
     checkSavedUserSession();
 });
@@ -254,7 +263,28 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
 });
 
 /**
- * Завершення оплати та перехід на екран доступу до Wi-Fi
+ * 2. Функція видачі доступу (перехід за посиланням шлюзу)
+ */
+function grantWifiAccessAndRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    
+    const tok = params.get('tok') || localStorage.getItem('saved_tok') || '';
+    const redir = params.get('redir') || localStorage.getItem('saved_redir') || 'https://google.com';
+    const authaction = params.get('authaction') || localStorage.getItem('saved_authaction') || 'http://192.168.1.1:2050/nodogsplash_auth/';
+
+    if (authaction && tok) {
+        // Формуємо пряме посилання для авторизації
+        const finalAuthUrl = authaction + '?tok=' + tok + '&redir=' + encodeURIComponent(redir);
+        
+        // Переходимо напряму
+        window.location.href = finalAuthUrl;
+    } else {
+        window.location.href = redir;
+    }
+}
+
+/**
+ * 3. Завершення оплати та автоматичний перехід
  */
 async function completePayment() {
     if (selectedTariffData.type === 'basic') {
@@ -269,45 +299,24 @@ async function completePayment() {
         startUltraTimer();
     }
 
-    // Синхронізуємо новий баланс та час в БД
     await syncUserData();
 
-    // Заповнюємо дані на екрані успіху
     document.getElementById('active-duration-display').innerText = selectedTariffData.name;
-    document.getElementById('paymentForm').reset();
+    
+    const form = document.getElementById('paymentForm');
+    if (form) form.reset();
 
-    // Визначаємо поточний активний екран для анімованого переходу
     const activeScreen = !document.getElementById('card-screen').classList.contains('hidden') 
         ? 'card-screen' 
         : 'method-screen';
     
+    // Перемикаємо екран на вікно успіху
     showScreen(activeScreen, 'success-screen');
-}
 
-/**
- * Надання доступу роутером (авторизація в Captive Portal або перехід в інтернет)
- */
-function grantWifiAccessAndRedirect() {
-    const btn = document.getElementById('connectInternetBtn');
-    btn.innerText = 'Підключення...';
-    btn.disabled = true;
-
-    const params = new URLSearchParams(window.location.search);
-    const loginLink = params.get('link-login') || params.get('login_url'); // Параметр URL від Captive Portal / MikroTik
-    const targetUrl = params.get('target') || params.get('dst') || 'https://www.google.com';
-
-    if (loginLink && currentUser) {
-        const form = document.getElementById('captiveLoginForm');
-        form.action = loginLink;
-        document.getElementById('cp-username').value = currentUser.username;
-        document.getElementById('cp-password').value = currentUser.username;
-        document.getElementById('cp-dst').value = targetUrl;
-        form.submit();
-    } else {
-        setTimeout(() => {
-            window.location.href = targetUrl;
-        }, 1000);
-    }
+    // Через 1.5 секунди автоматично вмикаємо інтернет
+    setTimeout(() => {
+        grantWifiAccessAndRedirect();
+    }, 1500);
 }
 
 function formatTime(secondsTotal) {
